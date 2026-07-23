@@ -1,40 +1,37 @@
 <?php
 
 return [
+
     /*
     |--------------------------------------------------------------------------
-    | SMS Gateway
+    | Dagu SMS Configuration
     |--------------------------------------------------------------------------
-    |
-    | For Dagu SMS:
-    | SMS_BASE_URL=https://sms.adamacity.gov.et:4000
-    | SMS_SEND_PATH=/api/send-sms
-    |
-    | If Dagu gives you another endpoint, only change SMS_SEND_PATH.
-    |
     */
 
     'enabled' => env('SMS_ENABLED', true),
 
-    'base_url' => env('SMS_BASE_URL', ''),
+    'base_url' => env('DAGU_SMS_BASE_URL', 'https://sms.adamacity.gov.et:4000'),
 
-    'send_path' => env('SMS_SEND_PATH', '/api/send-sms'),
+    'send_path' => env('DAGU_SMS_SEND_PATH', '/by-phone'),
 
-    'token' => env('SMS_TOKEN', env('SMS_API_KEY', '')),
+    'token' => env('DAGU_SMS_TOKEN'),
 
-    'method' => strtolower(env('SMS_METHOD', 'post')),
+    'method' => 'post',
 
-    'phone_field' => env('SMS_PHONE_FIELD', 'phone'),
+    'phone_field' => 'phone',
 
-    'message_field' => env('SMS_MESSAGE_FIELD', 'message'),
+    'message_field' => 'message',
 
-    'token_field' => env('SMS_TOKEN_FIELD', 'token'),
+    'sender_field' => 'senderID',
 
-    'token_type' => env('SMS_TOKEN_TYPE', 'Bearer'),
+    'sender' => env('DAGU_SMS_SENDER_ID', '9141'),
 
-    'token_location' => env('SMS_TOKEN_LOCATION', 'header'), // header|body|query
+    'flash_field' => 'flash',
 
-    'sender_field' => env('SMS_SENDER_FIELD', 'sender'),
+    'flash' => false,
 
-    'sender' => env('SMS_SENDER', env('APP_NAME', 'MESOB')),
+    'token_type' => 'Bearer',
+
+    'token_location' => 'header',
+
 ];

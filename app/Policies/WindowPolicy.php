@@ -10,9 +10,9 @@ class WindowPolicy
     /**
      * View windows.
      */
-    public function viewAny(?User $user): bool
+    public function viewAny(User $user): bool
     {
-        return $user === null || $user->can('windows.read');
+        return $user->can('windows.read');
     }
 
     /**

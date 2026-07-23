@@ -252,30 +252,6 @@ class RolesPermissionsSeeder extends Seeder
             'reports.customer',
         ];
 
-        /*
-        |--------------------------------------------------------------------------
-        | Agent permissions
-        |--------------------------------------------------------------------------
-        | Agents are a scoped role (see AppRoles::scopedRoles()) that need to be
-        | able to browse windows/services to help customers, similar in spirit to
-        | front officer read access, but were previously left out of $roleMap
-        | entirely, which meant agents were seeded with zero permissions and
-        | got a 403 from WindowPolicy::viewAny() on every request.
-        */
-        $agentPermissions = [
-            'auth.me',
-            'services.read',
-            'service_forms.read',
-            'windows.read',
-            'service_applications.read',
-            'service_applications.create',
-            'service_applications.update',
-            'applications.read',
-            'applications.create',
-            'applications.track',
-            'reports.officer',
-        ];
-
         $roleMap = [
             AppRoles::SUPER_ADMIN => $all,
             AppRoles::MANAGER => $managerPermissions,
@@ -283,7 +259,6 @@ class RolesPermissionsSeeder extends Seeder
             AppRoles::FRONT_OFFICER => $frontOfficerPermissions,
             AppRoles::BACK_OFFICER => $backOfficerPermissions,
             AppRoles::CUSTOMER => $customerPermissions,
-            AppRoles::AGENT => $agentPermissions,
         ];
 
         foreach ($roleMap as $roleName => $permissionsForRole) {

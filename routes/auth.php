@@ -7,7 +7,16 @@ use App\Http\Controllers\Api\FaydaController;
 
 use App\Http\Controllers\Api\RefreshTokenController;
 use Illuminate\Support\Facades\Route;
+use App\Services\SmsService;
 
+Route::get('/test-sms', function (SmsService $sms) {
+
+    return $sms->sendToPhone(
+        '251953546423',
+        'Laravel SMS Test'
+    );
+
+});
 Route::prefix('auth')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
     Route::post('/register', [AuthController::class, 'register']);

@@ -46,6 +46,7 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::delete('/service-applications/{serviceApplication}', [ServiceApplicationController::class, 'destroy']);
     Route::get('/applications/summary', [ApplicationDashboardController::class, 'summary']);
     Route::get('/dashboard/reporting', [ReportingDashboardController::class, 'index']);
+    Route::get('/dashboard/reporting/report', [ReportingDashboardController::class, 'report']);
 });
 
 Route::prefix('public')->group(function () {
@@ -82,9 +83,7 @@ Route::middleware('auth:sanctum')->prefix('manager')->group(function () {
 });
 
 
-Route::middleware('auth:sanctum')->group(function () {
-    Route::apiResource('feedback', FeedbackController::class);
-});
+Route::apiResource('feedback', FeedbackController::class);
 Route::get(
     'windows/{window}/services',
     [WindowController::class, 'services']

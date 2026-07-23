@@ -8,17 +8,7 @@ class ServiceApplicationFeedback extends Model
 {
     protected $table = 'service_application_feedbacks';
 
-    protected $fillable = [
-        'application_id',
-        'customer_id',
-        'satisfaction_scale',
-        'comment',
-    ];
-
-    protected $casts = [
-        'application_id' => 'integer',
-        'customer_id' => 'integer',
-    ];
+    protected $fillable = ['application_id', 'customer_id', 'satisfaction_scale', 'comment'];
 
     public function application()
     {

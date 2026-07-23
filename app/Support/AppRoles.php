@@ -12,7 +12,6 @@ class AppRoles
     public const BACK_OFFICER = 'back_officer';
     public const FRONT_OFFICER = 'front_officer';
     public const CUSTOMER = 'customer';
-    public const AGENT = 'agent';
 
     public const LEVEL_CITY = 'city';
     public const LEVEL_SUBCITY = 'subcity';
@@ -27,7 +26,6 @@ class AppRoles
             self::BACK_OFFICER,
             self::FRONT_OFFICER,
             self::CUSTOMER,
-            self::AGENT,
         ];
     }
 
@@ -47,7 +45,6 @@ class AppRoles
             self::ADMIN,
             self::BACK_OFFICER,
             self::FRONT_OFFICER,
-            self::AGENT,
         ];
     }
 
@@ -60,7 +57,6 @@ class AppRoles
             self::BACK_OFFICER => 'Back Officer',
             self::FRONT_OFFICER => 'Front Officer',
             self::CUSTOMER => 'Customer',
-            self::AGENT => 'Agent',
         ];
     }
 
@@ -82,7 +78,6 @@ class AppRoles
 
             'manager' => self::MANAGER,
             'managemer' => self::MANAGER,
-            'agent' => self::AGENT,
 
             'administrator' => self::ADMIN,
             'admin' => self::ADMIN,
@@ -208,8 +203,8 @@ class AppRoles
             'city_front_officer',
             'subcity_front_officer',
             'woreda_front_officer',
+
             'managemer',
-            'agent',
         ];
     }
 }

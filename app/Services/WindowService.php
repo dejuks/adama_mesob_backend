@@ -214,18 +214,7 @@ class WindowService
             return;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Scoped roles (admin, manager, front/back officer, agent)
-        |--------------------------------------------------------------------------
-        | Previously only ADMIN was allowed past this point, so every other
-        | scoped role (agent, manager, front_officer, back_officer) fell
-        | through to whereRaw('1 = 0') and saw zero windows regardless of
-        | their windows.read permission. Any role recognised by
-        | AppRoles::scopedRoles() should instead be filtered by administrative
-        | level, same as admin already was.
-        */
-        if (! AppRoles::isScoped($actor->roles()->pluck('name')->first())) {
+        if (! $actor->hasRole(AppRoles::ADMIN)) {
             $query->whereRaw('1 = 0');
             return;
         }

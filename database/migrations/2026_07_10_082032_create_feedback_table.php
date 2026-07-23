@@ -31,7 +31,25 @@ return new class extends Migration
             |--------------------------------------------------------------------------
             */
 
-            
+            // Overall rating (1-5)
+            $table->unsignedTinyInteger('overall_rating');
+
+            // Staff courtesy
+            $table->unsignedTinyInteger('staff_behavior')
+                ->nullable();
+
+            // Waiting time satisfaction
+            $table->unsignedTinyInteger('waiting_time')
+                ->nullable();
+
+            // Service quality
+            $table->unsignedTinyInteger('service_quality')
+                ->nullable();
+
+            // Office cleanliness
+            $table->unsignedTinyInteger('cleanliness')
+                ->nullable();
+
             /*
             |--------------------------------------------------------------------------
             | CUSTOMER OPINION

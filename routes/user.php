@@ -13,7 +13,7 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\UserActivationRequestController;
 use App\Http\Controllers\SmsController;
-use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\FeedbackController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -86,10 +86,7 @@ Route::get(
     '/feedback/{token}',
     [FeedbackController::class, 'show']
 );
-Route::get(
-    'feedback-report',
-    [FeedbackController::class, 'report']
-);
+
 Route::post(
     '/feedback/{token}',
     [FeedbackController::class, 'store']

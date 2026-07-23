@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 
 class SmsService
 {
@@ -12,34 +13,50 @@ class SmsService
 
     public function __construct()
     {
-        $this->baseUrl = env('DAGU_SMS_BASE_URL', '');
-        $this->token = env('DAGU_SMS_TOKEN', '');
+        $this->baseUrl = rtrim(env('DAGU_SMS_BASE_URL', ''), '/');
+        $this->token = trim(env('DAGU_SMS_TOKEN', ''));
         $this->senderId = env('DAGU_SMS_SENDER_ID', '9141');
 
-        if (!$this->baseUrl || !$this->token) {
-            throw new \Exception("SMS configuration missing in .env");
+        if (empty($this->baseUrl) || empty($this->token)) {
+            throw new \Exception('Dagu SMS configuration is missing.');
         }
     }
 
-    public function sendByPhone(string $phone, string $message)
+    /**
+     * Send SMS to a phone number.
+     */
+    public function sendToPhone(string $phone, string $message): array
     {
         return $this->sendSms($phone, $message);
     }
 
-    public function sendOtp(string $phone)
+    /**
+     * Alias method.
+     */
+    public function sendByPhone(string $phone, string $message): array
     {
-        $otp = rand(100000, 999999);
+        return $this->sendSms($phone, $message);
+    }
 
-        $message = "Your OTP code is: {$otp}";
+    /**
+     * Send OTP.
+     */
+    public function sendOtp(string $phone): array
+    {
+        $otp = random_int(100000, 999999);
+
+        $message = "Your verification code is {$otp}";
 
         return [
-            'phone' => $phone,
             'otp' => $otp,
             'response' => $this->sendSms($phone, $message),
         ];
     }
 
-    public function sendBulk(array $phones, string $message)
+    /**
+     * Send Bulk SMS.
+     */
+    public function sendBulk(array $phones, string $message): array
     {
         $results = [];
 
@@ -50,29 +67,85 @@ class SmsService
         return $results;
     }
 
-    private function sendSms(string $phone, string $message)
-{
-    try {
-        $response = Http::timeout(30)->post(
-            'http://196.190.213.33/api/sms/send-phone',
-            [
+    /**
+     * Send SMS using Dagu API.
+     */
+    private function sendSms(string $phone, string $message): array
+    {
+        try {
+
+            $phone = $this->normalizePhone($phone);
+
+            $url = $this->baseUrl . '/by-phone';
+
+            Log::info('Sending SMS', [
+                'url' => $url,
                 'phone' => $phone,
-                'message' => $message,
-            ]
-        );
+                'senderID' => $this->senderId,
+            ]);
 
-        return [
-            'status' => 'success',
-            'http_status' => $response->status(),
-            'body' => $response->body(), // ⭐ IMPORTANT FIX
-            'json' => $response->json(), // may be null but safe
-        ];
+            $response = Http::timeout(60)
+                ->acceptJson()
+                ->withHeaders([
+                    'Authorization' => 'Bearer ' . $this->token,
+                    'Content-Type' => 'application/json',
+                ])
+                ->post($url, [
+                    'senderID' => $this->senderId,
+                    'phone' => $phone,
+                    'message' => $message,
+                    'flash' => false,
+                ]);
 
-    } catch (\Exception $e) {
-        return [
-            'status' => 'failed',
-            'error' => $e->getMessage(),
-        ];
+            Log::info('Dagu SMS Response', [
+                'status' => $response->status(),
+                'body' => $response->body(),
+            ]);
+
+            return [
+                'success' => $response->successful(),
+                'status' => $response->status(),
+                'body' => $response->body(),
+                'json' => $response->json(),
+            ];
+
+        } catch (\Throwable $e) {
+
+            Log::error('Dagu SMS Exception', [
+                'message' => $e->getMessage(),
+            ]);
+
+            return [
+                'success' => false,
+                'status' => 500,
+                'error' => $e->getMessage(),
+            ];
+        }
     }
-}
+
+    /**
+     * Normalize Ethiopian phone number.
+     *
+     * 0912345678  -> 251912345678
+     * 912345678   -> 251912345678
+     * +251912345678 -> 251912345678
+     */
+    private function normalizePhone(string $phone): string
+    {
+        $phone = preg_replace('/[^0-9]/', '', $phone);
+
+        if (str_starts_with($phone, '09')) {
+            return '251' . substr($phone, 1);
+        }
+
+        if (str_starts_with($phone, '9')) {
+            return '251' . $phone;
+        }
+
+        if (str_starts_with($phone, '251')) {
+            return $phone;
+        }
+
+        return $phone;
+    }
 }

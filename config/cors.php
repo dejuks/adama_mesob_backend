@@ -14,3 +14,6 @@ return [
     'max_age' => 0,
     'supports_credentials' => true,
 ];
+
+//psql -h 127.0.0.1 -U mesobuser -d mesobdb
+// Password for user mesobuser:
