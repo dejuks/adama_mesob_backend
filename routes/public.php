@@ -17,6 +17,7 @@ Route::prefix('public')->group(function () {
     Route::get('/services', [PublicServiceController::class, 'index']);
     Route::get('/services/featured', [PublicServiceController::class, 'featured']);
     Route::get('/window-services', [PublicServiceController::class, 'windowServices']);
+    Route::get('/feedback-windows', [PublicServiceController::class, 'feedbackWindows']);
     Route::get('/services/{service}', [PublicServiceController::class, 'show']);
     Route::post('/track-application', [ApplicationTrackingController::class, 'track']);
     Route::post('/contact', [ContactController::class, 'store']);

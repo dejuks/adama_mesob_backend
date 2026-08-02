@@ -26,7 +26,9 @@ Route::middleware('auth:sanctum')->group(function () {
 | ADMIN API
 |--------------------------------------------------------------------------
 */
-Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
+Route::middleware('auth:sanctum')->prefix('admin')->group(function ()
+{
+
 
     /*
     |--------------------------------------------------------------------------
@@ -61,7 +63,7 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
         Route::post('{id}/roles', [UserController::class, 'assignRole']);
     });
 
-   
+
     /*
     |--------------------------------------------------------------------------
     | PERMISSIONS
@@ -92,7 +94,7 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     | AUDIT LOGS
     |--------------------------------------------------------------------------
     */
-  
+
 
     /*
     |--------------------------------------------------------------------------
@@ -117,5 +119,7 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
         Route::post('{id}/read', [NotificationController::class, 'markRead']);
         Route::post('/read-all', [NotificationController::class, 'markAllRead']);
     });
+
+
 
 });

@@ -51,4 +51,33 @@ class PublicServiceController extends Controller
             'data' => $this->publicServiceService->groupByWindow($request),
         ]);
     }
+
+    /**
+     * Windows available at the public feedback kiosk. Unlike the admin
+     * /windows endpoint, this requires no login and no administrative
+     * level — a customer standing at a window just needs to see it here.
+     */
+    public function feedbackWindows()
+    {
+        $windows = \App\Models\Window::query()
+            ->whereHas('services', fn ($query) => $query->where('status', 'active'))
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'title',
+                'city_title',
+                'subcity_title',
+                'woreda_title',
+                'city_id',
+                'subcity_id',
+                'woreda_id',
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Windows retrieved successfully',
+            'data' => $windows,
+        ]);
+    }
 }

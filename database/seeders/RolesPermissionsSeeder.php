@@ -101,6 +101,10 @@ class RolesPermissionsSeeder extends Seeder
             'reports.woreda',
             'reports.officer',
             'reports.customer',
+
+            'feedback.read',
+            'feedback.update',
+            'feedback.delete',
         ];
 
         foreach ($permissions as $permission) {
@@ -165,6 +169,10 @@ class RolesPermissionsSeeder extends Seeder
             'reports.city',
             'reports.subcity',
             'reports.woreda',
+
+            'feedback.read',
+            'feedback.update',
+            'feedback.delete',
         ];
 
         $adminPermissions = [
@@ -207,6 +215,8 @@ class RolesPermissionsSeeder extends Seeder
             'applications.summary',
 
             'audit_logs.read',
+
+            'feedback.read',
         ];
 
         $frontOfficerPermissions = [
@@ -252,12 +262,33 @@ class RolesPermissionsSeeder extends Seeder
             'reports.customer',
         ];
 
+        $feedbackPermissions = [
+            'auth.me',
+            'users.read',
+
+            'services.read',
+            'windows.read',
+
+            'cities.read',
+            'subcities.read',
+            'woredas.read',
+
+            'feedback.read',
+            'feedback.update',
+            'feedback.delete',
+
+            'reports.city',
+            'reports.subcity',
+            'reports.woreda',
+        ];
+
         $roleMap = [
             AppRoles::SUPER_ADMIN => $all,
             AppRoles::MANAGER => $managerPermissions,
             AppRoles::ADMIN => $adminPermissions,
             AppRoles::FRONT_OFFICER => $frontOfficerPermissions,
             AppRoles::BACK_OFFICER => $backOfficerPermissions,
+            AppRoles::FEEDBACK => $feedbackPermissions,
             AppRoles::CUSTOMER => $customerPermissions,
         ];
 

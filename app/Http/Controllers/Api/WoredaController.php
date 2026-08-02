@@ -7,11 +7,20 @@ use Illuminate\Http\Request;
 
 class WoredaController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
+        $query = Woreda::with('subcity')->latest();
+
+        if ($request->filled('subcity_id')) {
+            return response()->json([
+                'success' => true,
+                'data' => $query->where('subcity_id', $request->integer('subcity_id'))->get(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
-            'data' => Woreda::with('subcity')->latest()->paginate(10)
+            'data' => $query->paginate(10),
         ]);
     }
 

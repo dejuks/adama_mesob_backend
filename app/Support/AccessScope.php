@@ -46,6 +46,28 @@ class AccessScope
         return $this->applyApplicationLocationColumns($query, $actor);
     }
 
+    /**
+     * Scope feedback to the agent's own city / subcity / woreda, using the
+     * columns stored directly on the feedback row (populated at submission
+     * time from the submitting agent, or from the window for anonymous
+     * kiosk submissions).
+     */
+    public function applyFeedbackScope(Builder $query, User $actor): Builder
+    {
+        if ($actor->hasRole(AppRoles::SUPER_ADMIN)) {
+            return $query;
+        }
+
+        $level = AppRoles::userLevel($actor);
+
+        if (!$level) {
+            // Unscoped, non-super-admin roles (e.g. customer) see nothing here.
+            return $query->whereRaw('1 = 0');
+        }
+
+        return $this->applyLocationColumns($query, $actor);
+    }
+
     public function applyLocationColumns(Builder $query, User $actor): Builder
     {
         $level = AppRoles::userLevel($actor);

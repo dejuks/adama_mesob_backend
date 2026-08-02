@@ -21,6 +21,7 @@ use App\Http\Controllers\Api\Officer\OfficerApplicationController;
 use App\Http\Controllers\Api\Officer\CertificateController;
 use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\WindowController;
+use App\Http\Controllers\Api\NewsController;
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/applications', [ApplicationController::class, 'index']);
@@ -47,6 +48,18 @@ Route::middleware('auth:sanctum')->prefix('admin')->group(function () {
     Route::get('/applications/summary', [ApplicationDashboardController::class, 'summary']);
     Route::get('/dashboard/reporting', [ReportingDashboardController::class, 'index']);
     Route::get('/dashboard/reporting/report', [ReportingDashboardController::class, 'report']);
+
+
+    Route::prefix('news')->group(function () {
+        Route::get('/', [NewsController::class, 'index']);
+        Route::post('/', [NewsController::class, 'store']);
+        Route::get('{news}', [NewsController::class, 'show']);
+        Route::put('{news}', [NewsController::class, 'update']);
+        Route::patch('{news}', [NewsController::class, 'update']);
+        Route::delete('{news}', [NewsController::class, 'destroy']);
+    });
+
+
 });
 
 Route::prefix('public')->group(function () {
@@ -83,7 +96,19 @@ Route::middleware('auth:sanctum')->prefix('manager')->group(function () {
 });
 
 
-Route::apiResource('feedback', FeedbackController::class);
+// Public kiosk submission — no login required at the service window.
+Route::post('feedback', [FeedbackController::class, 'store']);
+
+// Viewing / managing feedback requires an authenticated agent so it can be
+// scoped to their city / subcity / woreda.
+Route::middleware('auth:sanctum')->group(function () {
+    Route::get('feedback', [FeedbackController::class, 'index']);
+    Route::get('feedback/{feedback}', [FeedbackController::class, 'show']);
+    Route::put('feedback/{feedback}', [FeedbackController::class, 'update']);
+    Route::patch('feedback/{feedback}', [FeedbackController::class, 'update']);
+    Route::delete('feedback/{feedback}', [FeedbackController::class, 'destroy']);
+});
+
 Route::get(
     'windows/{window}/services',
     [WindowController::class, 'services']

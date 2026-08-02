@@ -84,7 +84,9 @@ class OfficerWindowAssignmentService
         User $actor,
         int $officerId,
         int $windowId,
-        string $level
+        string $level,
+        ?int $subcityId = null,
+        ?int $woredaId = null
     ): OfficerWindowAssignment {
         $this->assertCityAdmin($actor);
 
@@ -94,6 +96,7 @@ class OfficerWindowAssignmentService
 
         $this->assertOfficerAllowedForLevel($officer, $level);
         $this->assertWindowAllowedForLevel($window, $level);
+        $this->assertOfficerMatchesSelectedLocation($officer, $level, $subcityId, $woredaId);
 
         $assignment = OfficerWindowAssignment::updateOrCreate(
             [
@@ -209,7 +212,9 @@ class OfficerWindowAssignmentService
                     ->where('is_active', true);
             });
 
-        $this->applyOfficerLocationFilter($query, $level);
+        $this->applyOfficerLocationFilter($query, $level, $actor->subcity_id, $actor->woreda_id);
+
+        $query->where('users.id', '!=', $actor->id);
 
         return $query
             ->orderBy('name')
@@ -410,6 +415,25 @@ class OfficerWindowAssignmentService
         if (AppRoles::userLevel($officer) !== $level) {
             throw ValidationException::withMessages([
                 'officer_id' => ['Officer administrative level does not match selected assignment level.'],
+            ]);
+        }
+    }
+
+    protected function assertOfficerMatchesSelectedLocation(
+        User $officer,
+        string $level,
+        ?int $subcityId,
+        ?int $woredaId
+    ): void {
+        if ($level === AppRoles::LEVEL_SUBCITY && $subcityId && (int) $officer->subcity_id !== $subcityId) {
+            throw ValidationException::withMessages([
+                'officer_id' => ['Officer does not belong to the selected subcity.'],
+            ]);
+        }
+
+        if ($level === AppRoles::LEVEL_WOREDA && $woredaId && (int) $officer->woreda_id !== $woredaId) {
+            throw ValidationException::withMessages([
+                'officer_id' => ['Officer does not belong to the selected woreda.'],
             ]);
         }
     }

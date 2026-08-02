@@ -49,6 +49,11 @@ class UserService
 
         if ($role) {
             $query->role($role);
+        } else {
+            // Customers live under their own "Customers" menu, not "Users".
+            $query->whereDoesntHave('roles', function ($q) {
+                $q->where('name', AppRoles::CUSTOMER);
+            });
         }
 
         return $query->latest()->paginate($perPage);
@@ -177,10 +182,15 @@ class UserService
 
         $this->assertActorCanManageRole($actor, $roleName, $location);
 
+        // A customer's phone is how they authenticate (Fayda/OTP) and must
+        // never be changed through the admin edit form, even if a value
+        // was submitted.
+        $isCustomer = $user->hasRole(AppRoles::CUSTOMER) || $roleName === AppRoles::CUSTOMER;
+
         $payload = [
             'name' => $data['name'],
             'email' => $data['email'],
-            'phone' => $data['phone'],
+            'phone' => $isCustomer ? $user->phone : $data['phone'],
             'gender' => $data['gender'] ?? null,
             'date_of_birth' => $data['date_of_birth'] ?? null,
             'address' => $data['address'] ?? null,
@@ -317,6 +327,12 @@ class UserService
             ]);
         }
 
+        if ($user->hasRole(AppRoles::CUSTOMER)) {
+            throw ValidationException::withMessages([
+                'user' => ['Customer accounts cannot be deleted.'],
+            ]);
+        }
+
         $user->syncRoles([]);
 
         if ($user->profile_image && Storage::disk('public')->exists($user->profile_image)) {
@@ -395,6 +411,12 @@ class UserService
             throw ValidationException::withMessages(['role' => ['You do not have permission to create users.']]);
         }
 
+        // Customer is an unscoped role, not part of the officer hierarchy
+        // below — anyone with users.create can create a customer account.
+        if ($targetRole === AppRoles::CUSTOMER) {
+            return;
+        }
+
         if (!$actor->hasRole(AppRoles::ADMIN)) {
             throw ValidationException::withMessages(['role' => ['Only admins can create officers/admin users.']]);
         }
@@ -456,6 +478,12 @@ class UserService
 
         if ($targetRole === AppRoles::SUPER_ADMIN) {
             throw ValidationException::withMessages(['role' => ['Only a super admin can manage super admin users.']]);
+        }
+
+        // Customer is an unscoped role — any actor with manage permission
+        // can update a customer account regardless of their own location.
+        if ($targetRole === AppRoles::CUSTOMER) {
+            return;
         }
 
         $actorLevel = AppRoles::userLevel($actor);

@@ -11,6 +11,7 @@ class AppRoles
     public const ADMIN = 'admin';
     public const BACK_OFFICER = 'back_officer';
     public const FRONT_OFFICER = 'front_officer';
+    public const FEEDBACK = 'feedback';
     public const CUSTOMER = 'customer';
 
     public const LEVEL_CITY = 'city';
@@ -25,6 +26,7 @@ class AppRoles
             self::ADMIN,
             self::BACK_OFFICER,
             self::FRONT_OFFICER,
+            self::FEEDBACK,
             self::CUSTOMER,
         ];
     }
@@ -45,6 +47,7 @@ class AppRoles
             self::ADMIN,
             self::BACK_OFFICER,
             self::FRONT_OFFICER,
+            self::FEEDBACK,
         ];
     }
 
@@ -56,6 +59,7 @@ class AppRoles
             self::ADMIN => 'Admin',
             self::BACK_OFFICER => 'Back Officer',
             self::FRONT_OFFICER => 'Front Officer',
+            self::FEEDBACK => 'Feedback Officer',
             self::CUSTOMER => 'Customer',
         ];
     }
@@ -92,6 +96,10 @@ class AppRoles
 
             'customer' => self::CUSTOMER,
 
+            'feedback' => self::FEEDBACK,
+            'feedback_officer' => self::FEEDBACK,
+            'feedbackofficer' => self::FEEDBACK,
+
             // Legacy level-specific roles.
             'city_manager' => self::MANAGER,
             'subcity_manager' => self::MANAGER,
@@ -108,6 +116,10 @@ class AppRoles
             'city_front_officer' => self::FRONT_OFFICER,
             'subcity_front_officer' => self::FRONT_OFFICER,
             'woreda_front_officer' => self::FRONT_OFFICER,
+
+            'city_feedback' => self::FEEDBACK,
+            'subcity_feedback' => self::FEEDBACK,
+            'woreda_feedback' => self::FEEDBACK,
         ];
 
         return $aliases[$value] ?? $value;
@@ -203,6 +215,10 @@ class AppRoles
             'city_front_officer',
             'subcity_front_officer',
             'woreda_front_officer',
+
+            'city_feedback',
+            'subcity_feedback',
+            'woreda_feedback',
 
             'managemer',
         ];

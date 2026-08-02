@@ -33,6 +33,8 @@ class OfficerWindowAssignmentController extends Controller
             'officer_id' => ['required', 'integer', 'exists:users,id'],
             'window_id' => ['required', 'integer', 'exists:windows,id'],
             'level' => ['required', 'string', 'in:city,subcity,woreda'],
+            'subcity_id' => ['nullable', 'integer', 'exists:subcities,id'],
+            'woreda_id' => ['nullable', 'integer', 'exists:woredas,id'],
         ]);
 
         return response()->json([
@@ -42,7 +44,9 @@ class OfficerWindowAssignmentController extends Controller
                 $request->user(),
                 (int) $data['officer_id'],
                 (int) $data['window_id'],
-                $data['level']
+                $data['level'],
+                isset($data['subcity_id']) ? (int) $data['subcity_id'] : null,
+                isset($data['woreda_id']) ? (int) $data['woreda_id'] : null
             ),
         ]);
     }
