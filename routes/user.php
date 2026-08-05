@@ -13,7 +13,6 @@ use App\Http\Controllers\Api\CustomerController;
 use App\Http\Controllers\Api\AuditLogController;
 use App\Http\Controllers\Api\UserActivationRequestController;
 use App\Http\Controllers\SmsController;
-use App\Http\Controllers\FeedbackController;
 use Illuminate\Support\Facades\Route;
 
 Route::middleware('auth:sanctum')->group(function () {
