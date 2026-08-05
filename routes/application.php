@@ -103,8 +103,8 @@ Route::post('feedback', [FeedbackController::class, 'store']);
 // scoped to their city / subcity / woreda.
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('feedback', [FeedbackController::class, 'index']);
-    // Must be registered before feedback/{feedback} so "windows" isn't
-    // captured as a feedback ID.
+    // Must be registered before feedback/{feedback} or "windows" gets
+    // swallowed by the {feedback} route-model-binding wildcard.
     Route::get('feedback/windows', [FeedbackController::class, 'windows']);
     Route::get('feedback/{feedback}', [FeedbackController::class, 'show']);
     Route::put('feedback/{feedback}', [FeedbackController::class, 'update']);

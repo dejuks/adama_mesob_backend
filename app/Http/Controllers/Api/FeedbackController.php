@@ -8,6 +8,7 @@ use App\Models\Feedback;
 use App\Models\Service;
 use App\Models\Window;
 use App\Support\AccessScope;
+use App\Support\AppRoles;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
 
@@ -160,29 +161,39 @@ class FeedbackController extends Controller
 
 
     /**
-     * Windows (with their active services) that the authenticated agent may
-     * pick from when browsing/filtering feedback — scoped to their own
-     * city / subcity / woreda.
-     *
-     * - City-level officer: only that city's city-level window(s).
-     * - Subcity-level officer: their subcity-level window PLUS every
-     *   woreda-level window under that subcity.
-     * - Woreda-level officer: only their own woreda-level window.
-     * - Super admin: every window in the system.
+     * Windows available to the authenticated feedback officer (or any
+     * scoped agent), limited to their own jurisdiction — cascading the
+     * same way feedback itself does: a city-level agent sees every
+     * window in their city (including its subcities/woredas), a
+     * subcity-level agent sees their subcity plus every woreda window
+     * under it, and a woreda-level agent sees only their own woreda's
+     * window. A super_admin sees every window system-wide. Each window
+     * comes back with its active services already attached so the
+     * frontend does not need a second request per window.
      */
     public function windows(Request $request)
     {
+
+        $actor = $request->user();
+
         $windows = Window::query()
-            ->with([
-                'city:id,name',
-                'subcity:id,name,city_id',
-                'woreda:id,name,subcity_id',
-            ])
-            ->when(
-                $request->user(),
-                fn ($query) => $this->scope->applyWindowScope($query, $request->user())
+
+            ->whereHas(
+                'services',
+                fn ($query) => $query->where('status', 'active')
             )
+
+            ->when(
+                ! $actor->hasRole(AppRoles::SUPER_ADMIN),
+                fn ($query) => $this->applyWindowLocationScope($query, $actor)
+            )
+
+            ->with([
+                'services' => fn ($query) => $query->where('status', 'active'),
+            ])
+
             ->orderBy('name')
+
             ->get([
                 'id',
                 'name',
@@ -194,33 +205,73 @@ class FeedbackController extends Controller
                 'city_id',
                 'subcity_id',
                 'woreda_id',
-                'availability',
             ]);
-
-        // A window can be attached to the same service once per
-        // administrative level (city/subcity/woreda are separate rows in
-        // service_window). Load each window's services scoped to that
-        // window's own level so a subcity officer's woreda-level windows
-        // don't also drag in that same window's city-level services, and
-        // nothing shows up duplicated.
-        $windows->each(function (Window $window) {
-            $window->setRelation(
-                'services',
-                $window->services()
-                    ->where('status', 'active')
-                    ->wherePivot('assignment_level', $window->administrative_level)
-                    ->orderBy('name')
-                    ->get()
-                    ->unique('id')
-                    ->values()
-            );
-        });
 
         return response()->json([
             'success' => true,
             'message' => 'Windows retrieved successfully',
             'data' => $windows,
         ]);
+
+    }
+
+
+
+
+    /**
+     * Scope a Window query to the actor's own city / subcity / woreda.
+     *
+     * Unlike Feedback (where city_id/subcity_id/woreda_id are always
+     * filled in at submission time), existing Window rows may have
+     * these columns left empty — the admin "create window" form does
+     * not require them. Treating a NULL location column as "not yet
+     * assigned to a specific location" (visible to everyone at that
+     * level) avoids a window silently disappearing for every officer
+     * the moment this scoping ships, while still fully isolating
+     * windows that *do* have a location set. Once every window has
+     * its location filled in via the admin Windows page, the NULL
+     * branches below simply stop matching anything.
+     */
+    private function applyWindowLocationScope(\Illuminate\Database\Eloquent\Builder $query, $actor): \Illuminate\Database\Eloquent\Builder
+    {
+
+        $level = AppRoles::userLevel($actor);
+
+        if (! $level) {
+            // Unscoped, non-super-admin roles see nothing here.
+            return $query->whereRaw('1 = 0');
+        }
+
+        if ($level === AppRoles::LEVEL_CITY && $actor->city_id) {
+            return $query->where(function ($q) use ($actor) {
+                $q->whereNull('city_id')
+                    ->orWhere('city_id', $actor->city_id);
+            });
+        }
+
+        if ($level === AppRoles::LEVEL_SUBCITY && $actor->subcity_id) {
+            return $query->where(function ($q) use ($actor) {
+                $q->whereNull('subcity_id')
+                    ->orWhere(function ($q2) use ($actor) {
+                        $q2->where('city_id', $actor->city_id)
+                            ->where('subcity_id', $actor->subcity_id);
+                    });
+            });
+        }
+
+        if ($level === AppRoles::LEVEL_WOREDA && $actor->woreda_id) {
+            return $query->where(function ($q) use ($actor) {
+                $q->whereNull('woreda_id')
+                    ->orWhere(function ($q2) use ($actor) {
+                        $q2->where('city_id', $actor->city_id)
+                            ->where('subcity_id', $actor->subcity_id)
+                            ->where('woreda_id', $actor->woreda_id);
+                    });
+            });
+        }
+
+        return $query;
+
     }
 
 
