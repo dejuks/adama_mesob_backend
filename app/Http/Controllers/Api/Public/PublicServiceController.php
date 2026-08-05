@@ -69,10 +69,22 @@ class PublicServiceController extends Controller
                 'city_title',
                 'subcity_title',
                 'woreda_title',
+                'administrative_level',
                 'city_id',
                 'subcity_id',
                 'woreda_id',
             ]);
+
+        // Count only the services at the window's own administrative level —
+        // the same service can also be attached to this window at other
+        // levels (see service_window.assignment_level), and those aren't
+        // what this physical window serves.
+        $windows->each(function ($window) {
+            $window->services_count = $window->services()
+                ->where('status', 'active')
+                ->wherePivot('assignment_level', $window->administrative_level)
+                ->count();
+        });
 
         return response()->json([
             'success' => true,
