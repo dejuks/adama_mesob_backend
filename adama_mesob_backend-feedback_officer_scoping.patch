@@ -1,0 +1,160 @@
+diff --git a/app/Http/Controllers/Api/FeedbackController.php b/app/Http/Controllers/Api/FeedbackController.php
+index 5b95194..0754149 100644
+--- a/app/Http/Controllers/Api/FeedbackController.php
++++ b/app/Http/Controllers/Api/FeedbackController.php
+@@ -6,6 +6,7 @@
+ use App\Http\Resources\FeedbackResource;
+ use App\Models\Feedback;
+ use App\Models\Service;
++use App\Models\Window;
+ use App\Support\AccessScope;
+ use Illuminate\Http\Request;
+ use Illuminate\Validation\Rule;
+@@ -158,6 +159,55 @@ function ($query) use ($request) {
+ 
+ 
+ 
++    /**
++     * Windows (with their active services) that the authenticated agent may
++     * pick from when browsing/filtering feedback — scoped to their own
++     * city / subcity / woreda.
++     *
++     * - City-level officer: only that city's city-level window(s).
++     * - Subcity-level officer: their subcity-level window PLUS every
++     *   woreda-level window under that subcity.
++     * - Woreda-level officer: only their own woreda-level window.
++     * - Super admin: every window in the system.
++     */
++    public function windows(Request $request)
++    {
++        $windows = Window::query()
++            ->with([
++                'city:id,name',
++                'subcity:id,name,city_id',
++                'woreda:id,name,subcity_id',
++                'services' => fn ($query) => $query->where('status', 'active'),
++            ])
++            ->when(
++                $request->user(),
++                fn ($query) => $this->scope->applyWindowScope($query, $request->user())
++            )
++            ->orderBy('name')
++            ->get([
++                'id',
++                'name',
++                'title',
++                'city_title',
++                'subcity_title',
++                'woreda_title',
++                'administrative_level',
++                'city_id',
++                'subcity_id',
++                'woreda_id',
++                'availability',
++            ]);
++
++        return response()->json([
++            'success' => true,
++            'message' => 'Windows retrieved successfully',
++            'data' => $windows,
++        ]);
++    }
++
++
++
++
+     /**
+      * Store public feedback
+      */
+diff --git a/app/Support/AccessScope.php b/app/Support/AccessScope.php
+index b168518..c91fc68 100644
+--- a/app/Support/AccessScope.php
++++ b/app/Support/AccessScope.php
+@@ -68,6 +68,73 @@ public function applyFeedbackScope(Builder $query, User $actor): Builder
+         return $this->applyLocationColumns($query, $actor);
+     }
+ 
++    /**
++     * Scope windows (and, by extension, the services attached to them) to
++     * the actor's own city / subcity / woreda — mirroring applyFeedbackScope
++     * but against the windows table's own location columns instead of the
++     * denormalized ones on feedback rows.
++     *
++     * - City-level actor: only windows that belong to their city AND are
++     *   offered at the city level.
++     * - Subcity-level actor: windows that belong to their subcity AND are
++     *   offered at the subcity level, PLUS woreda-level windows for any
++     *   woreda under that same subcity (so a subcity feedback officer sees
++     *   their own subcity window and every woreda window beneath it).
++     * - Woreda-level actor: only the woreda-level window(s) for their exact
++     *   woreda.
++     */
++    public function applyWindowScope(Builder $query, User $actor): Builder
++    {
++        if ($actor->hasRole(AppRoles::SUPER_ADMIN)) {
++            return $query;
++        }
++
++        $level = AppRoles::userLevel($actor);
++
++        if (!$level) {
++            return $query->whereRaw('1 = 0');
++        }
++
++        if ($level === AppRoles::LEVEL_CITY && $actor->city_id) {
++            return $query
++                ->where('city_id', $actor->city_id)
++                ->where(fn (Builder $q) => $this->matchesLevel($q, AppRoles::LEVEL_CITY));
++        }
++
++        if ($level === AppRoles::LEVEL_SUBCITY && $actor->subcity_id) {
++            return $query
++                ->where('city_id', $actor->city_id)
++                ->where('subcity_id', $actor->subcity_id)
++                ->where(function (Builder $q) {
++                    $this->matchesLevel($q, AppRoles::LEVEL_SUBCITY);
++                    $q->orWhere(fn (Builder $qq) => $this->matchesLevel($qq, AppRoles::LEVEL_WOREDA));
++                });
++        }
++
++        if ($level === AppRoles::LEVEL_WOREDA && $actor->woreda_id) {
++            return $query
++                ->where('city_id', $actor->city_id)
++                ->where('subcity_id', $actor->subcity_id)
++                ->where('woreda_id', $actor->woreda_id)
++                ->where(fn (Builder $q) => $this->matchesLevel($q, AppRoles::LEVEL_WOREDA));
++        }
++
++        return $query->whereRaw('1 = 0');
++    }
++
++    /**
++     * A window "belongs" to a level either via the new single
++     * administrative_level column or the legacy availability JSON
++     * (plain array, or {levels:[...]} shape).
++     */
++    protected function matchesLevel(Builder $query, string $level): Builder
++    {
++        return $query
++            ->where('administrative_level', $level)
++            ->orWhereJsonContains('availability->levels', $level)
++            ->orWhereJsonContains('availability', $level);
++    }
++
+     public function applyLocationColumns(Builder $query, User $actor): Builder
+     {
+         $level = AppRoles::userLevel($actor);
+diff --git a/routes/application.php b/routes/application.php
+index 3da3abd..49fb2ee 100644
+--- a/routes/application.php
++++ b/routes/application.php
+@@ -103,6 +103,9 @@
+ // scoped to their city / subcity / woreda.
+ Route::middleware('auth:sanctum')->group(function () {
+     Route::get('feedback', [FeedbackController::class, 'index']);
++    // Must be registered before feedback/{feedback} so "windows" isn't
++    // captured as a feedback ID.
++    Route::get('feedback/windows', [FeedbackController::class, 'windows']);
+     Route::get('feedback/{feedback}', [FeedbackController::class, 'show']);
+     Route::put('feedback/{feedback}', [FeedbackController::class, 'update']);
+     Route::patch('feedback/{feedback}', [FeedbackController::class, 'update']);

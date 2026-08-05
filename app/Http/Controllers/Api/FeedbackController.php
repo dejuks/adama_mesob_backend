@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Resources\FeedbackResource;
 use App\Models\Feedback;
 use App\Models\Service;
+use App\Models\Window;
 use App\Support\AccessScope;
 use Illuminate\Http\Request;
 use Illuminate\Validation\Rule;
@@ -154,6 +155,55 @@ class FeedbackController extends Controller
     }
 
 
+
+
+
+
+    /**
+     * Windows (with their active services) that the authenticated agent may
+     * pick from when browsing/filtering feedback — scoped to their own
+     * city / subcity / woreda.
+     *
+     * - City-level officer: only that city's city-level window(s).
+     * - Subcity-level officer: their subcity-level window PLUS every
+     *   woreda-level window under that subcity.
+     * - Woreda-level officer: only their own woreda-level window.
+     * - Super admin: every window in the system.
+     */
+    public function windows(Request $request)
+    {
+        $windows = Window::query()
+            ->with([
+                'city:id,name',
+                'subcity:id,name,city_id',
+                'woreda:id,name,subcity_id',
+                'services' => fn ($query) => $query->where('status', 'active'),
+            ])
+            ->when(
+                $request->user(),
+                fn ($query) => $this->scope->applyWindowScope($query, $request->user())
+            )
+            ->orderBy('name')
+            ->get([
+                'id',
+                'name',
+                'title',
+                'city_title',
+                'subcity_title',
+                'woreda_title',
+                'administrative_level',
+                'city_id',
+                'subcity_id',
+                'woreda_id',
+                'availability',
+            ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Windows retrieved successfully',
+            'data' => $windows,
+        ]);
+    }
 
 
 
