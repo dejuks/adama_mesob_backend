@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreWindowRequest;
 use App\Http\Requests\UpdateWindowRequest;
 use Illuminate\Http\Request;
-
+use App\Support\AppRoles;
 class WindowController extends Controller
 {
     public function __construct(

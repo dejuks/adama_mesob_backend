@@ -1,5 +1,5 @@
 diff --git a/app/Http/Controllers/Api/FeedbackController.php b/app/Http/Controllers/Api/FeedbackController.php
-index 5b95194..0754149 100644
+index 5b95194..f5bae12 100644
 --- a/app/Http/Controllers/Api/FeedbackController.php
 +++ b/app/Http/Controllers/Api/FeedbackController.php
 @@ -6,6 +6,7 @@
@@ -10,7 +10,7 @@ index 5b95194..0754149 100644
  use App\Support\AccessScope;
  use Illuminate\Http\Request;
  use Illuminate\Validation\Rule;
-@@ -158,6 +159,55 @@ function ($query) use ($request) {
+@@ -158,6 +159,73 @@ function ($query) use ($request) {
  
  
  
@@ -32,7 +32,6 @@ index 5b95194..0754149 100644
 +                'city:id,name',
 +                'subcity:id,name,city_id',
 +                'woreda:id,name,subcity_id',
-+                'services' => fn ($query) => $query->where('status', 'active'),
 +            ])
 +            ->when(
 +                $request->user(),
@@ -53,6 +52,25 @@ index 5b95194..0754149 100644
 +                'availability',
 +            ]);
 +
++        // A window can be attached to the same service once per
++        // administrative level (city/subcity/woreda are separate rows in
++        // service_window). Load each window's services scoped to that
++        // window's own level so a subcity officer's woreda-level windows
++        // don't also drag in that same window's city-level services, and
++        // nothing shows up duplicated.
++        $windows->each(function (Window $window) {
++            $window->setRelation(
++                'services',
++                $window->services()
++                    ->where('status', 'active')
++                    ->wherePivot('assignment_level', $window->administrative_level)
++                    ->orderBy('name')
++                    ->get()
++                    ->unique('id')
++                    ->values()
++            );
++        });
++
 +        return response()->json([
 +            'success' => true,
 +            'message' => 'Windows retrieved successfully',
@@ -66,6 +84,82 @@ index 5b95194..0754149 100644
      /**
       * Store public feedback
       */
+diff --git a/app/Http/Controllers/Api/Public/PublicServiceController.php b/app/Http/Controllers/Api/Public/PublicServiceController.php
+index 9d80505..d8f49f6 100644
+--- a/app/Http/Controllers/Api/Public/PublicServiceController.php
++++ b/app/Http/Controllers/Api/Public/PublicServiceController.php
+@@ -69,11 +69,23 @@ public function feedbackWindows()
+                 'city_title',
+                 'subcity_title',
+                 'woreda_title',
++                'administrative_level',
+                 'city_id',
+                 'subcity_id',
+                 'woreda_id',
+             ]);
+ 
++        // Count only the services at the window's own administrative level —
++        // the same service can also be attached to this window at other
++        // levels (see service_window.assignment_level), and those aren't
++        // what this physical window serves.
++        $windows->each(function ($window) {
++            $window->services_count = $window->services()
++                ->where('status', 'active')
++                ->wherePivot('assignment_level', $window->administrative_level)
++                ->count();
++        });
++
+         return response()->json([
+             'success' => true,
+             'message' => 'Windows retrieved successfully',
+diff --git a/app/Http/Controllers/Api/WindowController.php b/app/Http/Controllers/Api/WindowController.php
+index bfd37fe..19d66f6 100644
+--- a/app/Http/Controllers/Api/WindowController.php
++++ b/app/Http/Controllers/Api/WindowController.php
+@@ -4,6 +4,7 @@
+ 
+ use App\Models\Window;
+ use App\Services\WindowService;
++use App\Support\AppRoles;
+ use App\Http\Controllers\Controller;
+ use App\Http\Requests\StoreWindowRequest;
+ use App\Http\Requests\UpdateWindowRequest;
+@@ -83,12 +84,33 @@ public function destroy(Window $window)
+         ]);
+     }
+ 
+-    public function services(Window $window)
++    /**
++     * A window can legitimately serve city, subcity, AND woreda customers —
++     * each combination is a separate row in service_window (see the
++     * assignment_level pivot column) so the same service can be attached to
++     * one physical window once per level. Returning all of them at once is
++     * what produced the "same service listed 2-3 times" bug: a service
++     * attached at city + subcity + woreda level joins in three times.
++     *
++     * We only ever want ONE level's worth of services for a given request:
++     * - Logged-in agent: their own level (city/subcity/woreda officer).
++     * - Anonymous kiosk visitor (or an agent with no level, e.g. super
++     *   admin): the window's own administrative level, since that's the
++     *   level the physical window itself was set up to serve.
++     */
++    public function services(Request $request, Window $window)
+     {
++        $level = $request->user()
++            ? (AppRoles::userLevel($request->user()) ?: $window->administrative_level)
++            : $window->administrative_level;
++
+         $services = $window->services()
+             ->where('status', 'active')
++            ->wherePivot('assignment_level', $level)
+             ->orderBy('name')
+-            ->get();
++            ->get()
++            ->unique('id')
++            ->values();
+ 
+         return response()->json([
+             'success' => true,
 diff --git a/app/Support/AccessScope.php b/app/Support/AccessScope.php
 index b168518..c91fc68 100644
 --- a/app/Support/AccessScope.php

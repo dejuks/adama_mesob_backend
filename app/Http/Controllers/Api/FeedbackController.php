@@ -177,7 +177,6 @@ class FeedbackController extends Controller
                 'city:id,name',
                 'subcity:id,name,city_id',
                 'woreda:id,name,subcity_id',
-                'services' => fn ($query) => $query->where('status', 'active'),
             ])
             ->when(
                 $request->user(),
@@ -197,6 +196,25 @@ class FeedbackController extends Controller
                 'woreda_id',
                 'availability',
             ]);
+
+        // A window can be attached to the same service once per
+        // administrative level (city/subcity/woreda are separate rows in
+        // service_window). Load each window's services scoped to that
+        // window's own level so a subcity officer's woreda-level windows
+        // don't also drag in that same window's city-level services, and
+        // nothing shows up duplicated.
+        $windows->each(function (Window $window) {
+            $window->setRelation(
+                'services',
+                $window->services()
+                    ->where('status', 'active')
+                    ->wherePivot('assignment_level', $window->administrative_level)
+                    ->orderBy('name')
+                    ->get()
+                    ->unique('id')
+                    ->values()
+            );
+        });
 
         return response()->json([
             'success' => true,
