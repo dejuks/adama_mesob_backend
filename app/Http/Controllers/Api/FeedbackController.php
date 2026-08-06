@@ -105,17 +105,7 @@ class FeedbackController extends Controller
             )
 
 
-            ->when(
-                $request->rating,
-                function ($query) use ($request) {
 
-                    $query->where(
-                        'overall_rating',
-                        $request->rating
-                    );
-
-                }
-            )
 
 
             ->when(

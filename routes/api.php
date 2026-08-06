@@ -40,4 +40,6 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::put('feedback/{feedback}', [FeedbackController::class, 'update']);
     Route::patch('feedback/{feedback}', [FeedbackController::class, 'update']);
     Route::delete('feedback/{feedback}', [FeedbackController::class, 'destroy']);
+
+
 });

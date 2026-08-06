@@ -81,15 +81,7 @@ Route::post('/sms/send-phone', [SmsController::class, 'sendPhone']);
 Route::post('/sms/send-otp', [SmsController::class, 'sendOtp']);
 Route::post('/sms/send-bulk', [SmsController::class, 'sendBulk']);
 
-Route::get(
-    '/feedback/{token}',
-    [FeedbackController::class, 'show']
-);
 
-Route::post(
-    '/feedback/{token}',
-    [FeedbackController::class, 'store']
-);
 
 Route::get('/customers', [CustomerController::class, 'customerlist']);
   Route::get('/customers/{id}',[ CustomerController::class,'show']);

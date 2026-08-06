@@ -19,7 +19,6 @@ use App\Http\Controllers\Api\Public\PublicApplicationController;
 use App\Http\Controllers\Api\Public\ApplicationTrackingController;
 use App\Http\Controllers\Api\Officer\OfficerApplicationController;
 use App\Http\Controllers\Api\Officer\CertificateController;
-use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\WindowController;
 use App\Http\Controllers\Api\NewsController;
 
