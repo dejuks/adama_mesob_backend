@@ -238,13 +238,16 @@ class FeedbackController extends Controller
         |
         */
 
-        $windows->each(function (Window $window) {
+        $actorLevel = AppRoles::userLevel($actor)
+            ?: $request->input('level', 'city');
+
+        $windows->each(function (Window $window) use ($actorLevel) {
 
             $services = $window->services()
                 ->where('services.status', 'active')
                 ->wherePivot(
                     'assignment_level',
-                    $window->administrative_level
+                    $actorLevel
                 )
                 ->orderBy('services.name')
                 ->get()
