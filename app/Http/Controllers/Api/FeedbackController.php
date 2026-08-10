@@ -180,18 +180,30 @@ class FeedbackController extends Controller
                 $query->where('services.status', 'active');
             });
 
-        if (! $actor->hasRole(AppRoles::SUPER_ADMIN)) {
+        /*
+        |--------------------------------------------------------------------------
+        | Apply location scope
+        |--------------------------------------------------------------------------
+        */
+
+        if (!$actor->hasRole(AppRoles::SUPER_ADMIN)) {
             $windowsQuery = $this->applyWindowLocationScope(
                 $windowsQuery,
                 $actor
             );
         }
 
+        /*
+        |--------------------------------------------------------------------------
+        | Load windows
+        |--------------------------------------------------------------------------
+        */
+
         $windows = $windowsQuery
             ->with([
-                'services' => function ($query) {
-                    $query->where('services.status', 'active');
-                },
+                'city:id,name',
+                'subcity:id,name,city_id',
+                'woreda:id,name,subcity_id',
             ])
             ->orderBy('name')
             ->get([
@@ -205,7 +217,42 @@ class FeedbackController extends Controller
                 'city_id',
                 'subcity_id',
                 'woreda_id',
+                'availability',
             ]);
+
+        /*
+        |--------------------------------------------------------------------------
+        | Load services according to the window's administrative level
+        |--------------------------------------------------------------------------
+        |
+        | This is IMPORTANT.
+        |
+        | A service can be attached to the same physical window multiple
+        | times:
+        |
+        | city
+        | subcity
+        | woreda
+        |
+        | We only load the service assignment matching the window level.
+        |
+        */
+
+        $windows->each(function (Window $window) {
+
+            $services = $window->services()
+                ->where('services.status', 'active')
+                ->wherePivot(
+                    'assignment_level',
+                    $window->administrative_level
+                )
+                ->orderBy('services.name')
+                ->get()
+                ->unique('id')
+                ->values();
+
+            $window->setRelation('services', $services);
+        });
 
         return response()->json([
             'success' => true,
@@ -213,7 +260,6 @@ class FeedbackController extends Controller
             'data' => $windows,
         ]);
     }
-
 
 
     /**

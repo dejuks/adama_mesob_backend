@@ -80,16 +80,15 @@ class PublicServiceController extends Controller
         // levels (see service_window.assignment_level), and those aren't
         // what this physical window serves.
         $windows->each(function ($window) {
-            $window->services_count = $window->services()
-                ->where('status', 'active')
-                ->wherePivot('assignment_level', $window->administrative_level)
-                ->count();
-        });
 
-        return response()->json([
-            'success' => true,
-            'message' => 'Windows retrieved successfully',
-            'data' => $windows,
-        ]);
+            $window->services_count = $window->services()
+                ->where('services.status', 'active')
+                ->wherePivot(
+                    'assignment_level',
+                    $window->administrative_level
+                )
+                ->count();
+
+        });
     }
 }
