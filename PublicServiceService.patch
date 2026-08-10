@@ -1,0 +1,23 @@
+diff --git a/app/Services/PublicServiceService.php b/app/Services/PublicServiceService.php
+--- a/app/Services/PublicServiceService.php
++++ b/app/Services/PublicServiceService.php
+@@ -92,8 +92,9 @@ class PublicServiceService
+         $level = strtolower((string) ($request->input('administrative_level') ?? $request->input('level') ?? 'city'));
+ 
+         $windows = Window::with([
+-            'services' => function ($query) {
++            'services' => function ($query) use ($level) {
+                 $query->where('status', 'active')
++                    ->wherePivot('assignment_level', $level)
+                     ->with([
+                         'windows' => function ($windowQuery) {
+                             $windowQuery
+@@ -131,7 +132,7 @@ class PublicServiceService
+                     }
+ 
+                     $firstWindow = $service->windows
+-                        ->filter(fn (Window $serviceWindow) => in_array($level, $this->windowLevels($serviceWindow), true))
++                        ->filter(fn (Window $serviceWindow) => $serviceWindow->pivot->assignment_level === $level)
+                         ->sortBy('pivot.step_order')
+                         ->first();
+ 
