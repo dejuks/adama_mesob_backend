@@ -8,7 +8,7 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\StoreWindowRequest;
 use App\Http\Requests\UpdateWindowRequest;
 use Illuminate\Http\Request;
-
+use App\Support\AppRoles;
 class WindowController extends Controller
 {
     public function __construct(
@@ -83,15 +83,24 @@ class WindowController extends Controller
         ]);
     }
 
-    public function services(Window $window)
+    public function services(Request $request, Window $window)
     {
+        $level = $request->user()
+            ? (AppRoles::userLevel($request->user())
+                ?: $window->administrative_level)
+            : $window->administrative_level;
+
         $services = $window->services()
-            ->where('status', 'active')
-            ->orderBy('name')
-            ->get();
+            ->where('services.status', 'active')
+            ->wherePivot('assignment_level', $level)
+            ->orderBy('services.name')
+            ->get()
+            ->unique('id')
+            ->values();
 
         return response()->json([
             'success' => true,
+            'message' => 'Services retrieved successfully',
             'data' => $services,
         ]);
     }

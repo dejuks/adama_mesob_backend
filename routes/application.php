@@ -19,7 +19,7 @@ use App\Http\Controllers\Api\Public\PublicApplicationController;
 use App\Http\Controllers\Api\Public\ApplicationTrackingController;
 use App\Http\Controllers\Api\Officer\OfficerApplicationController;
 use App\Http\Controllers\Api\Officer\CertificateController;
-use App\Http\Controllers\Api\FeedbackController;
+
 use App\Http\Controllers\Api\WindowController;
 use App\Http\Controllers\Api\NewsController;
 
@@ -96,18 +96,7 @@ Route::middleware('auth:sanctum')->prefix('manager')->group(function () {
 });
 
 
-// Public kiosk submission — no login required at the service window.
-Route::post('feedback', [FeedbackController::class, 'store']);
 
-// Viewing / managing feedback requires an authenticated agent so it can be
-// scoped to their city / subcity / woreda.
-Route::middleware('auth:sanctum')->group(function () {
-    Route::get('feedback', [FeedbackController::class, 'index']);
-    Route::get('feedback/{feedback}', [FeedbackController::class, 'show']);
-    Route::put('feedback/{feedback}', [FeedbackController::class, 'update']);
-    Route::patch('feedback/{feedback}', [FeedbackController::class, 'update']);
-    Route::delete('feedback/{feedback}', [FeedbackController::class, 'destroy']);
-});
 
 Route::get(
     'windows/{window}/services',
