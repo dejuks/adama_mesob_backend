@@ -1,0 +1,22 @@
+diff --git a/app/Http/Controllers/Api/FeedbackController.php b/app/Http/Controllers/Api/FeedbackController.php
+--- a/app/Http/Controllers/Api/FeedbackController.php
++++ b/app/Http/Controllers/Api/FeedbackController.php
+@@ -238,13 +238,16 @@
+         |
+         */
+ 
+-        $windows->each(function (Window $window) {
++        $actorLevel = AppRoles::userLevel($actor)
++            ?: $request->input('level', 'city');
++
++        $windows->each(function (Window $window) use ($actorLevel) {
+ 
+             $services = $window->services()
+                 ->where('services.status', 'active')
+                 ->wherePivot(
+                     'assignment_level',
+-                    $window->administrative_level
++                    $actorLevel
+                 )
+                 ->orderBy('services.name')
+                 ->get()
