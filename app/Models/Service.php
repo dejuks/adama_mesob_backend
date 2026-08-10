@@ -43,7 +43,10 @@ class Service extends Model
 
     public function assignedUsers()
     {
-        return $this->belongsToMany(User::class, 'user_service_assignments')
+        return $this->belongsToMany(
+            User::class,
+            'user_service_assignments'
+        )
             ->withPivot([
                 'officer_type',
                 'window_id',
@@ -89,15 +92,12 @@ class Service extends Model
 
     public function criteria()
     {
-        return $this->hasMany(ServiceCriterion::class)->orderBy('sort_order');
+        return $this->hasMany(ServiceCriterion::class)
+            ->orderBy('sort_order');
     }
 
     public function feedbacks()
     {
-        return $this->hasMany(
-            Feedback::class
-        );
+        return $this->hasMany(Feedback::class);
     }
-
-
 }

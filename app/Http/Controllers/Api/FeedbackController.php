@@ -105,7 +105,17 @@ class FeedbackController extends Controller
             )
 
 
+            ->when(
+                $request->rating,
+                function ($query) use ($request) {
 
+                    $query->where(
+                        'overall_rating',
+                        $request->rating
+                    );
+
+                }
+            )
 
 
             ->when(
@@ -163,27 +173,27 @@ class FeedbackController extends Controller
      */
     public function windows(Request $request)
     {
-
         $actor = $request->user();
 
-        $windows = Window::query()
+        $windowsQuery = Window::query()
+            ->whereHas('services', function ($query) {
+                $query->where('services.status', 'active');
+            });
 
-            ->whereHas(
-                'services',
-                fn ($query) => $query->where('status', 'active')
-            )
+        if (! $actor->hasRole(AppRoles::SUPER_ADMIN)) {
+            $windowsQuery = $this->applyWindowLocationScope(
+                $windowsQuery,
+                $actor
+            );
+        }
 
-            ->when(
-                ! $actor->hasRole(AppRoles::SUPER_ADMIN),
-                fn ($query) => $this->applyWindowLocationScope($query, $actor)
-            )
-
+        $windows = $windowsQuery
             ->with([
-                'services' => fn ($query) => $query->where('status', 'active'),
+                'services' => function ($query) {
+                    $query->where('services.status', 'active');
+                },
             ])
-
             ->orderBy('name')
-
             ->get([
                 'id',
                 'name',
@@ -202,9 +212,7 @@ class FeedbackController extends Controller
             'message' => 'Windows retrieved successfully',
             'data' => $windows,
         ]);
-
     }
-
 
 
 

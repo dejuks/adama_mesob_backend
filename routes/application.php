@@ -19,6 +19,7 @@ use App\Http\Controllers\Api\Public\PublicApplicationController;
 use App\Http\Controllers\Api\Public\ApplicationTrackingController;
 use App\Http\Controllers\Api\Officer\OfficerApplicationController;
 use App\Http\Controllers\Api\Officer\CertificateController;
+
 use App\Http\Controllers\Api\WindowController;
 use App\Http\Controllers\Api\NewsController;
 
@@ -93,6 +94,8 @@ Route::middleware('auth:sanctum')->prefix('manager')->group(function () {
     Route::post('/applications/{application}/return-to-officer', [ManagerApplicationController::class, 'returnToOfficer']);
     Route::post('/applications/{application}/escalate-up', [ManagerApplicationController::class, 'escalateUp']);
 });
+
+
 
 
 Route::get(
